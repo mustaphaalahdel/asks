@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>اسئلة ثقافية</title>
+    <link rel="stylesheet" href="animate/animate.css" />
+    <link rel="stylesheet" href="wow-text-field/wow-text-field.css" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .frame-asks {
+        /* background-color: green; */
+        height: 90%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+        align-items: center;
+      }
+      .ask {
+        background-color: white;
+        padding: 20px;
+        width: 60%;
+        text-align: center;
+        border-radius: 4px;
+        box-shadow: 0px 0px 10px 3px rgba(128, 128, 128, 0.6),
+          inset 0px 0px 10px 0px rgba(128, 128, 128, 0.4);
+      }
+      .op1,
+      .op2,
+      .op3 {
+        background-color: white;
+        padding: 1%;
+        width: 60%;
+        text-align: start;
+        border-radius: 4px;
+        /* box-shadow: 0px 0px 10px 0px rgba(128, 128, 128, 0.6),
+          inset 0px 0px 10px 0px rgba(128, 128, 128, 0.4); */
+      }
+      input[type="radio"] {
+        appearance: none;
+      }
+    </style>
+  </head>
+  <body dir="rtl" onload="main();">
+    <div id="app" class="app"></div>
+
+    <script src="jquery/jquery.js"></script>
+    <script src="alert/alert.js"></script>
+    <script src="animate/animate.js"></script>
+    <script>
+      new WOW().init();
+      let asks = [];
+      let url = "https://mustaphaalahdel.github.io/asks/asks.json";
+      let divApp = document.querySelector(".app");
+      let grade = 0,
+        ask_number = 0;
+      let app, input_name, input_login_check;
+      let question, option1, option2, option3;
+      let frame_login_html = `
+      <div
+        id="frame-login"
+        class="frame-login wow fadeInDown"
+        data-wow-duration="1s"
+      >
+        <fieldset class="fieldset-login">
+          <legend>تسجيل الدخول</legend>
+          <div
+            class="text-field"
+            style="
+              width: 100%;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              align-items: center;
+              background-color: inherit;
+            "
+          >
+            <div class="wow-text-field">
+              <input
+                type="text"
+                placeholder="ادخل اسمك ..."
+                id="name"
+                class="wow-input"
+                autocomplete="off"
+                required
+              />
+              <label for="name" class="wow-label">اسم المستخدم</label>
+            </div>
+            <p
+              id="input-login-check"
+              style="width: 80%; padding: 5px; font-size: 12px; color: red"
+            ></p>
+          </div>
+          <button class="mybtn" onclick="login(this);">تسجيل الدخول</button>
+        </fieldset>
+      </div>
+      `;
+      let frame_asks_html = `
+        <div id="frame-asks" class="frame-asks">
+          <div id="question" class="ask wow fadeInDown" data-wow-delay="0.5s">
+            what is your name?
+          </div>
+          <div></div>
+          <label for="op1" class="op1 wow fadeInLeft" data-wow-delay="1s">
+            <input type="radio" id="op1" name="op" />
+            <span id="option1">option one</span>
+          </label>
+          <label for="op2" class="op2 wow fadeInRight" data-wow-delay="1.5s">
+            <input type="radio" id="op2" name="op" />
+            <span id="option2">option two</span>
+          </label>
+          <label for="op3" class="op3 wow fadeInLeft" data-wow-delay="2s">
+            <input type="radio" id="op3" name="op" />
+            <span id="option3">option three</span>
+          </label>
+          <button
+            id="btn-confirm"
+            class="mybtn wow fadeInUp"
+            data-wow-delay="2.5s"
+            onclick="confirm(this);"
+            disabled
+          >
+            تـــأكـــيـــد
+          </button>
+        </div>
+      `;
+
+      function changePseudo(css) {
+        let styleTag = document.getElementsByTagName("style")[0];
+        if (styleTag == undefined) {
+          styleTag = document.createElement("style");
+          document.getElementsByTagName("head")[0].appendChild(styleTag);
+          styleTag = document.getElementsByTagName("style")[0];
+        }
+        if (styleTag.innerHTML.includes(css) == false) {
+          styleTag.innerHTML += css;
+        } else {
+          styleTag.innerHTML = styleTag.innerHTML.replace(css, "");
+          styleTag.innerHTML += css;
+        }
+      }
+      async function getData() {
+        try {
+          let response = await fetch(url);
+          asks = await response.json();
+        } catch (err) {
+          console.log("Error in Api: " + err);
+        }
+      }
+      function shuffle(array) {
+        let currentIndex = array.length,
+          randomIndex;
+        while (currentIndex != 0) {
+          randomIndex = Math.floor(Math.random() * currentIndex);
+          currentIndex--;
+          [array[currentIndex], array[randomIndex]] = [
+            array[randomIndex],
+            array[currentIndex],
+          ];
+        }
+        return array;
+      }
+
+      async function main() {
+        await getData();
+        shuffle(asks);
+        app = document.getElementById("app");
+        if (asks.length > 0) {
+          if (!localStorage["done"]) {
+            if (!localStorage["user_name"]) {
+              app.innerHTML = frame_login_html;
+              input_name = document.getElementById("name");
+              setTimeout(() => {
+                input_name.focus();
+              }, 700);
+            } else {
+              localStorage["grade"] = 0;
+              showAsks();
+            }
+          } else {
+            await Swal.fire({
+              icon: "success",
+              title: `الاسم: ${localStorage["user_name"]}`,
+              text: `لقد حصل على الدرجة: ${localStorage["grade"]} / 10 `,
+              footer: "<span></span>",
+              confirmButtonColor: "#2196f3",
+              showCloseButton: true,
+            });
+            app.innerHTML = "";
+          }
+        } else {
+          await Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Something went wrong!",
+            footer: "<span></span>",
+            confirmButtonColor: "#ff0000",
+            showCloseButton: true,
+          });
+          divApp.innerHTML = `
+            <div class="err">Error in Server</div>
+          `;
+        }
+      }
+      function login(e) {
+        input_login_check = document.getElementById("input-login-check");
+        if (input_name.value == "") {
+          input_login_check.textContent = "لا يمكن ترك هذا الحقل فارغ";
+          input_name.focus();
+          changePseudo(`
+            .wow-input:focus ~ .wow-label {
+              color: red;
+            }
+            .wow-input:focus {
+              border-color: red;
+            }
+            .wow-input:focus:hover {
+              border-color: red;
+            }
+          `);
+        } else {
+          localStorage["user_name"] = input_name.value;
+          e.innerHTML = `<div class="circle-progress"></div>`;
+          e.disabled = true;
+          input_login_check.textContent = "";
+          input_name.focus();
+          changePseudo(`
+            .wow-input:focus ~ .wow-label {
+              color: var(--inputFocusColor);
+            }
+            .wow-input:focus {
+              border-color: var(--inputFocusColor);
+            }
+            .wow-input:focus:hover {
+              border-color: var(--inputFocusColor);
+            }
+          `);
+          $("#frame-login")
+            .delay(1000)
+            .animate({ opacity: "0.0" }, 1000, function () {
+              $("#frame-login").remove();
+            });
+
+          setTimeout(() => {
+            // show asks
+            showAsks();
+            // end show asks
+          }, 2000);
+        }
+      }
+      function showAsks() {
+        app.innerHTML = frame_asks_html;
+        let op = document.querySelectorAll(`[name='op']`);
+        let btn_confirm = document.getElementById("btn-confirm");
+
+        question = document.getElementById("question");
+        option1 = document.getElementById("option1");
+        option2 = document.getElementById("option2");
+        option3 = document.getElementById("option3");
+        question.textContent = `${ask_number + 1}- ${asks[ask_number]["ask"]}`;
+        option1.textContent = asks[ask_number]["options"][0]["option1"];
+        option2.textContent = asks[ask_number]["options"][1]["option2"];
+        option3.textContent = asks[ask_number]["options"][2]["option3"];
+
+        for (i = 0; i < op.length; i++) {
+          op[i].onclick = radioClick;
+        }
+        function radioClick() {
+          for (i = 0; i < op.length; i++) {
+            btn_confirm.disabled = false;
+            op[i].parentElement.style.cssText = `
+              background-color: white;
+            `;
+            op[i].nextElementSibling.style.cssText = `
+              color: #37474f;
+            `;
+            if (op[i].checked) {
+              op[i].parentElement.style.cssText = `
+                background-color: #64b5f6;
+              `;
+              op[i].nextElementSibling.style.cssText = `
+                color: white;
+              `;
+            }
+          }
+        }
+        btn_confirm.onclick = async function (e) {
+          let op_checked = document.querySelector(`input[name='op']:checked`);
+          if (op_checked.nextElementSibling.textContent.includes("  ")) {
+            grade++;
+          } else {
+          }
+          op_checked.checked = false;
+          radioClick();
+          btn_confirm.disabled = true;
+
+          ask_number++;
+          if (ask_number <= 9) {
+            question.textContent = `${ask_number + 1}- ${
+              asks[ask_number]["ask"]
+            }`;
+            option1.textContent = asks[ask_number]["options"][0]["option1"];
+            option2.textContent = asks[ask_number]["options"][1]["option2"];
+            option3.textContent = asks[ask_number]["options"][2]["option3"];
+          } else {
+            localStorage["grade"] = grade;
+            localStorage["done"] = true;
+            await Swal.fire({
+              icon: "success",
+              title: `الاسم: ${localStorage["user_name"]}`,
+              text: `لقد حصل على الدرجة: ${localStorage["grade"]} / 10`,
+              footer: "<span></span>",
+              confirmButtonColor: "#2196f3",
+              showCloseButton: true,
+            });
+            app.innerHTML = "";
+          }
+        };
+      }
+    </script>
+  </body>
+</html>
